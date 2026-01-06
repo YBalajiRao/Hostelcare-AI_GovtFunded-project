@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warden Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Warden Dashboard</h1>
+        
+        <button onclick="loadComplaints()" class="refresh-btn">🔄 Refresh</button>
+
+        <div id="complaints"></div>
+
+        <p><a href="index.html">← Back to Student Page</a></p>
+    </div>
+
+    <script>
+        loadComplaints();
+
+        async function loadComplaints() {
+            const res = await fetch('/api/complaints');
+            const data = await res.json();
+            
+            const container = document.getElementById('complaints');
+            
+            if (data.length === 0) {
+                container.innerHTML = '<p>No complaints yet!</p>';
+                return;
+            }
+
+            let html = '';
+            data.forEach(c => {
+                html += `
+                    <div class="complaint-card">
+                        <p><strong>${c.studentName}</strong> | Room: ${c.roomNumber}</p>
+                        <p>"${c.complaint}"</p>
+                        <p>Status: <span class="status-${c.status}">${c.status}</span></p>
+                        <button onclick="updateStatus(${c.id}, 'in-progress')">🔄 In Progress</button>
+                        <button onclick="updateStatus(${c.id}, 'resolved')">✅ Resolved</button>
+                        <button onclick="deleteComplaint(${c.id})">🗑️ Delete</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        async function updateStatus(id, status) {
+            await fetch('/api/complaints/' + id, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({status})
+            });
+            loadComplaints();
+        }
+
+        async function deleteComplaint(id) {
+            await fetch('/api/complaints/' + id, {method: 'DELETE'});
+            loadComplaints();
+        }
+    </script>
+</body>
+</html>
